@@ -8,6 +8,7 @@ from utils.metrics import R1_mAP_eval
 from torch.cuda import amp
 import torch.distributed as dist
 
+
 def do_train(cfg,
              model,
              center_criterion,
@@ -31,13 +32,16 @@ def do_train(cfg,
     if device:
         model.to(local_rank)
         if torch.cuda.device_count() > 1 and cfg.MODEL.DIST_TRAIN:
-            print('Using {} GPUs for training'.format(torch.cuda.device_count()))
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], find_unused_parameters=True)
+            print('Using {} GPUs for training'.format(
+                torch.cuda.device_count()))
+            model = torch.nn.parallel.DistributedDataParallel(
+                model, device_ids=[local_rank], find_unused_parameters=True)
 
     loss_meter = AverageMeter()
     acc_meter = AverageMeter()
 
-    evaluator = R1_mAP_eval(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)
+    evaluator = R1_mAP_eval(num_query, max_rank=50,
+                            feat_norm=cfg.TEST.FEAT_NORM)
     scaler = amp.GradScaler()
     # train
     for epoch in range(1, epochs + 1):
@@ -55,7 +59,8 @@ def do_train(cfg,
             target_cam = target_cam.to(device)
             target_view = target_view.to(device)
             with amp.autocast(enabled=True):
-                score, feat = model(img, target, cam_label=target_cam, view_label=target_view )
+                score, feat = model(
+                    img, target, cam_label=target_cam, view_label=target_view)
                 loss = loss_fn(score, feat, target, target_cam)
 
             scaler.scale(loss).backward()
@@ -88,7 +93,7 @@ def do_train(cfg,
             pass
         else:
             logger.info("Epoch {} done. Time per batch: {:.3f}[s] Speed: {:.1f}[samples/s]"
-                    .format(epoch, time_per_batch, train_loader.batch_size / time_per_batch))
+                        .format(epoch, time_per_batch, train_loader.batch_size / time_per_batch))
 
         if epoch % checkpoint_period == 0:
             if cfg.MODEL.DIST_TRAIN:
@@ -108,13 +113,15 @@ def do_train(cfg,
                             img = img.to(device)
                             camids = camids.to(device)
                             target_view = target_view.to(device)
-                            feat = model(img, cam_label=camids, view_label=target_view)
+                            feat = model(img, cam_label=camids,
+                                         view_label=target_view)
                             evaluator.update((feat, vid, camid))
                     cmc, mAP, _, _, _, _, _ = evaluator.compute()
                     logger.info("Validation Results - Epoch: {}".format(epoch))
                     logger.info("mAP: {:.1%}".format(mAP))
                     for r in [1, 5, 10]:
-                        logger.info("CMC curve, Rank-{:<3}:{:.1%}".format(r, cmc[r - 1]))
+                        logger.info(
+                            "CMC curve, Rank-{:<3}:{:.1%}".format(r, cmc[r - 1]))
                     torch.cuda.empty_cache()
             else:
                 model.eval()
@@ -123,13 +130,15 @@ def do_train(cfg,
                         img = img.to(device)
                         camids = camids.to(device)
                         target_view = target_view.to(device)
-                        feat = model(img, cam_label=camids, view_label=target_view)
+                        feat = model(img, cam_label=camids,
+                                     view_label=target_view)
                         evaluator.update((feat, vid, camid))
                 cmc, mAP, _, _, _, _, _ = evaluator.compute()
                 logger.info("Validation Results - Epoch: {}".format(epoch))
                 logger.info("mAP: {:.1%}".format(mAP))
                 for r in [1, 5, 10]:
-                    logger.info("CMC curve, Rank-{:<3}:{:.1%}".format(r, cmc[r - 1]))
+                    logger.info(
+                        "CMC curve, Rank-{:<3}:{:.1%}".format(r, cmc[r - 1]))
                 torch.cuda.empty_cache()
 
 
@@ -141,13 +150,15 @@ def do_inference(cfg,
     logger = logging.getLogger("transreid.test")
     logger.info("Enter inferencing")
 
-    evaluator = R1_mAP_eval(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)
+    evaluator = R1_mAP_eval(num_query, max_rank=50,
+                            feat_norm=cfg.TEST.FEAT_NORM)
 
     evaluator.reset()
 
     if device:
         if torch.cuda.device_count() > 1:
-            print('Using {} GPUs for inference'.format(torch.cuda.device_count()))
+            print('Using {} GPUs for inference'.format(
+                torch.cuda.device_count()))
             model = nn.DataParallel(model)
         model.to(device)
 
@@ -169,5 +180,3 @@ def do_inference(cfg,
     for r in [1, 5, 10]:
         logger.info("CMC curve, Rank-{:<3}:{:.1%}".format(r, cmc[r - 1]))
     return cmc[0], cmc[4]
-
-

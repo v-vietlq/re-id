@@ -8,9 +8,10 @@ def euclidean_distance(qf, gf):
     m = qf.shape[0]
     n = gf.shape[0]
     dist_mat = torch.pow(qf, 2).sum(dim=1, keepdim=True).expand(m, n) + \
-               torch.pow(gf, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+        torch.pow(gf, 2).sum(dim=1, keepdim=True).expand(n, m).t()
     dist_mat.addmm_(1, -2, qf, gf.t())
     return dist_mat.cpu().numpy()
+
 
 def cosine_similarity(qf, gf):
     epsilon = 0.00001
@@ -110,7 +111,8 @@ class R1_mAP_eval():
         feats = torch.cat(self.feats, dim=0)
         if self.feat_norm:
             print("The test feature is normalized")
-            feats = torch.nn.functional.normalize(feats, dim=1, p=2)  # along channel
+            feats = torch.nn.functional.normalize(
+                feats, dim=1, p=2)  # along channel
         # query
         qf = feats[:self.num_query]
         q_pids = np.asarray(self.pids[:self.num_query])
@@ -131,6 +133,3 @@ class R1_mAP_eval():
         cmc, mAP = eval_func(distmat, q_pids, g_pids, q_camids, g_camids)
 
         return cmc, mAP, distmat, self.pids, self.camids, qf, gf
-
-
-

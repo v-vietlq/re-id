@@ -4,11 +4,11 @@ MODEL:
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
-  NAME: 'transformer'
+  NAME: 'resnet50'
   NO_MARGIN: True
-  DEVICE_ID: ('2')
+  DEVICE_ID: ('4')
   TRANSFORMER_TYPE: 'vit_base_patch16_224_TransReID'
-  STRIDE_SIZE: [12, 12]
+  STRIDE_SIZE: [16, 16]
   SIE_CAMERA: True
   SIE_VIEW: True
   SIE_COE: 3.0
@@ -56,6 +56,6 @@ TEST:
   NECK_FEAT: 'before'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: '../logs/veri_vit_transreid_stride'
+OUTPUT_DIR: '../logs/resnet50_reid'
 
 
